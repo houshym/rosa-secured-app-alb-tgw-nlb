@@ -1,2 +1,2 @@
 # rosa-secured-app-alb-tgw-nlb
-A Git repository showcasing best practices to deploy an HTTPS application. Utilizes ALB, TGW, and NLB for secure, load-balanced traffic flow with fixed IP. Demonstrates TLS termination for enhanced data securit
+This Git repository demonstrates exposing an HTTPS endpoint on ROSA privatelink cluster to the internet, using ALB, TGW, and NLB with fixed IP addresses. 
