@@ -195,7 +195,7 @@ spec:
   privateKey:
     algorithm: RSA
     size: 2048
-  secretName: bookinfo-cert
+  secretName: echo-server-cert
 EOF
 ```
 ### Deploy application
