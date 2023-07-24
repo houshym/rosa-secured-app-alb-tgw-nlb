@@ -138,7 +138,7 @@ oc apply -f echo-server/echo-server.yaml
 ```
 
 ### Check SSL termination
-#### Check termination at ingress/node 
+#### Check termination at NodePort 
  get the nodes' IP address and istio-ingress service ports
 
  **Note:** If you don't get a response, check the security group and be sure that port 3000-32767 is allowed 
@@ -146,13 +146,13 @@ oc apply -f echo-server/echo-server.yaml
 ```bash
 export WORKER_IP_ADDRESS=$(oc get nodes -l node-role.kubernetes.io/worker -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 1)
 echo "Worker IP Address $WORKER_IP_ADDRESS"
-export INGRESS_NODE_PORT=$(oc get svc -n echo-server http-https-echo -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
-echo "Ingress service NodePort $INGRESS_NODE_PORT"
+export NODE_PORT=$(oc get svc -n echo-server http-https-echo -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+echo "Ingress service NodePort $NODE_PORT"
 ```
 
 Check application endpoint
 ```bash
-curl -v -k --resolve secured-echo-server.com:$INGRESS_NODE_PORT:$WORKER_IP_ADDRESS  https://secured-echo-server.com:$INGRESS_NODE_PORT/productpage 
+curl -v -k --resolve secured-echo-server.com:$NODE_PORT:$WORKER_IP_ADDRESS  https://secured-echo-server.com:$NODE_PORT/productpage 
 ```
 
 #### Check TLS termination at the NLB layer
