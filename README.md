@@ -129,77 +129,8 @@ spec:
 EOF
 ```
 
-### Deploy cert-manager 
-We use cert-manager to issue a certificate for bookinfo application. The following step creates a self-signed certificate. if you have a certificate you can skip these steps
-
-1. Create a project (namespace) in the ROSA cluster.
-```bash
-oc new-project cert-manager --display-name="Certificate Manager" --description="Project to manage certificate LCM"
-```
-
-2. Install the cert-manager Operator
-
-```bash
-
-cat <<EOF | oc create -f -
-# apiVersion: operators.coreos.com/v1
-# kind: OperatorGroup
-# metadata:
-#   generateName: cert-manager-
-#   namespace: cert-manager
-# spec:
-#   targetNamespaces:
-#     - cert-manager-operator
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: cert-manager
-  namespace: openshift-operators
-spec:
-  channel: stable
-  installPlanApproval: Automatic
-  name: cert-manager
-  source: community-operators
-  sourceNamespace: openshift-marketplace
-EOF
-```
-
-3. Create a cluster issuer
-
-```bash
-cat <<EOF | oc create -f -
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: self-signed-issuer
-spec:
-  selfSigned: {}
-EOF
-```
-4. Create a self-signed certificate
-```bash
-cat <<EOF | oc create -f -
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: echo-server-self-sgined-cert
-  namespace: echo-server
-spec:
-  commonName: secured-echo-server.com
-  dnsNames:
-    - secured-echo-server.com
-  issuerRef:
-    kind: ClusterIssuer
-    name: self-signed-issuer
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  secretName: echo-server-cert
-EOF
-```
 ### Deploy application
-we use bookinfo application to show an end to end encryption
+we use echo-server application to show an end to end encryption
 
 ```bash
 oc new-project echo-server
@@ -235,7 +166,7 @@ echo "NLP IP address $NLB_IP"
 ```
 Check application  endpoint
 ```bash
- curl -v -k --resolve secured-echo-server.com:443:$NLB_IP https://securedbookinfo.com:443/productpage
+ curl -v -k --resolve secured-echo-server.com:443:$NLB_IP https://secured-echo-server.com:443/productpage
  ```
 
 
@@ -290,7 +221,7 @@ Check application  endpoint
 
    4.1. Create a security group for ALB
    ```bash
-   ALB_SG_ID=$(aws ec2 create-security-group --group-name bookinfo \
+   ALB_SG_ID=$(aws ec2 create-security-group --group-name secured-echo-server \
        --vpc-id $ING_EGRESS_VPC_ID \
        --description "allow traffic from the internet" \
        --query 'GroupId' \
@@ -307,7 +238,7 @@ Check application  endpoint
     4.3 Create ALB 
      ```bash
       ALB_ARN=$(aws elbv2 create-load-balancer \
-        --name bookinfo-alb \
+        --name secured-echo-alb \
         --subnets $ING_EGRESS_PUB_SUB_1 $ING_EGRESS_PUB_SUB_2 \
         --security-groups $ALB_SG_ID \
         --scheme internet-facing \
@@ -321,7 +252,7 @@ Check application  endpoint
      --load-balancer-arn $ALB_ARN \
      --protocol HTTPS \
      --port 443 \
-     --certificates CertificateArn=$BOOKINFO_CERT_ARN \
+     --certificates CertificateArn=$ECHO_SERVER_CERT_ARN \
      --default-actions Type=forward,TargetGroupArn=$TG_ARN
     ```
    
