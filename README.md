@@ -1,5 +1,4 @@
-### Securely Exposing Applications with PrivateLink ROSA Cluster and OpenShift Service Mesh 
-
+### Securely Exposing ROSA PrivateLink Cluster to the Internet with ALB, TGW, and NLB: A Sample Architecture"
 This Git repository demonstrates exposing an HTTPS endpoint on ROSA privatelink cluster to the internet, using ALB, TGW, and NLB with fixed IP addresses. 
 This repository demonstrates how to utilize a privatelink ROSA (Red Hat OpenShift on AWS) cluster to securely expose an application with end-to-end encryption. The provided architecture serves as a sample for application exposure. The deployment incorporates an Ingress/Egress VPC to route traffic to the cluster, which is deployed within a private VPC.
 
@@ -184,12 +183,12 @@ cat <<EOF | oc create -f -
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: bookinfo-self-sgined-cert
-  namespace: ossm
+  name: echo-server-self-sgined-cert
+  namespace: echo-server
 spec:
-  commonName: securedbookinfo.com
+  commonName: secured-echo-server.com
   dnsNames:
-    - securedbookinfo.com
+    - secured-echo-server.com
   issuerRef:
     kind: ClusterIssuer
     name: self-signed-issuer
@@ -204,10 +203,7 @@ we use bookinfo application to show an end to end encryption
 
 ```bash
 oc new-project echo-server
-oc apply -f ./app/smmr.yaml
-oc apply -f ./app/bookinfo.yaml
-oc apply -f ./app/destination-rule.yaml
-oc apply -f ./app/gateway.yaml
+oc apply -f echo-server/echo-server.yaml
 ```
 
 ### Check SSL termination
@@ -219,34 +215,29 @@ oc apply -f ./app/gateway.yaml
 ```bash
 export WORKER_IP_ADDRESS=$(oc get nodes -l node-role.kubernetes.io/worker -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 1)
 echo "Worker IP Address $WORKER_IP_ADDRESS"
-export INGRESS_NODE_PORT=$(oc get svc -n ossm istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+export INGRESS_NODE_PORT=$(oc get svc -n echo-server http-https-echo -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 echo "Ingress service NodePort $INGRESS_NODE_PORT"
 ```
 
 Check application endpoint
 ```bash
-curl -v -k --resolve securedbookinfo.com:$INGRESS_NODE_PORT:$WORKER_IP_ADDRESS  https://securedbookinfo.com:$INGRESS_NODE_PORT/productpage 
+curl -v -k --resolve secured-echo-server.com:$INGRESS_NODE_PORT:$WORKER_IP_ADDRESS  https://secured-echo-server.com:$INGRESS_NODE_PORT/productpage 
 ```
 
 #### Check TLS termination at the NLB layer
 
 
  ```bash
-export NLB_URL=$(oc get svc -n ossm istio-ingressgateway -ojsonpath='{.status.loadBalancer.ingress[0].hostname}')
+export NLB_URL=$(oc get svc -n ech-server http-https-echo -ojsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo "NLB's FQDN:  $NLB_URL"
 export NLB_IP=$(dig +short $NLB_URL | head -1)
 echo "NLP IP address $NLB_IP"
 ```
 Check application  endpoint
 ```bash
- curl -v -k --resolve securedbookinfo.com:443:$NLB_IP https://securedbookinfo.com:443/productpage
+ curl -v -k --resolve secured-echo-server.com:443:$NLB_IP https://securedbookinfo.com:443/productpage
  ```
 
-
-you can check HTTP to HTTPS redirection by running the following command and you can see HTTP/1.1 301 Moved Permanently
-```bash
-curl -v -k -L --resolve securedbookinfo.com:80:$NLB_IP  http://securedbookinfo.com/productpage
-``` 
 
 
 ### Create an ALB in the public subnet 
@@ -259,7 +250,7 @@ curl -v -k -L --resolve securedbookinfo.com:80:$NLB_IP  http://securedbookinfo.c
    export ING_EGRESS_VPC_ID=vpc-0344775b9177ec7d5
    export ING_EGRESS_PUB_SUB_1=subnet-0123d00f20e9d4c4b
    export ING_EGRESS_PUB_SUB_2=subnet-06130b9f97821d8d8
-   export BOOKINFO_CERT_ARN=arn:aws:acm:us-east-2:660250927410:certificate/ddae6fbd-a540-4619-939f-9e20ff9b765e
+   export ECHO_SERVER_CERT_ARN=arn:aws:acm:us-east-2:660250927410:certificate/ddae6fbd-a540-4619-939f-9e20ff9b765e
     
     export TG_ARN=$(aws elbv2 create-target-group --name nlb-e2e-tg --protocol HTTPS --port 443 --vpc-id $ING_EGRESS_VPC_ID --target-type ip --health-check-protocol HTTP --health-check-port 15021 --health-check-path /healthz/ready --query 'TargetGroups[0].TargetGroupArn' --output text) 
     ```
@@ -338,12 +329,9 @@ curl -v -k -L --resolve securedbookinfo.com:80:$NLB_IP  http://securedbookinfo.c
 Fetch ALB's URL and generate traffic  
 ```bash
 ALB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns $ALB_ARN --query 'LoadBalancers[0].DNSName' --output text)
-while true; do curl -k  https://$ALB_DNS/productpage; sleep 1; done
+
+curl -k  https://$ALB_DNS
 ```
-
-open Kiali
-
-![Kiali dashboard](./images/bookinfo_kiali.png)
 
 
 
