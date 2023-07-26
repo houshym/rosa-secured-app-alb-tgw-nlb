@@ -1,4 +1,4 @@
-### Securely Exposing ROSA PrivateLink Cluster to the Internet with ALB, TGW, and NLB: A Sample Architecture"
+###  Securely Exposing apps to the Internet with ALB, TGW, and NLB with fixed IP"
 This Git repository demonstrates exposing an HTTPS endpoint on ROSA privatelink cluster to the internet, using ALB, TGW, and NLB with fixed IP addresses. 
 This repository demonstrates how to utilize a privatelink ROSA (Red Hat OpenShift on AWS) cluster to securely expose an application with end-to-end encryption. The provided architecture serves as a sample for application exposure. The deployment incorporates an Ingress/Egress VPC to route traffic to the cluster, which is deployed within a private VPC.
 
@@ -23,7 +23,7 @@ Git clone https://github.com/houshym/rosa-ossm-e2e-encryption
 
 ### Deploy AWS Load Balancer Operator (ALBO)
 
-Use this [mobb.ninja](https://mobb.ninja/docs/rosa/aws-load-balancer-operator/) to install ALB operator on ROSA cluster or use the following snippet or run the  [script](./alb-operator/deploy-awlbo.sh)
+Use this [mobb.ninja](https://mobb.ninja/docs/rosa/aws-load-balancer-operator/) to install ALB operator on ROSA cluster or use the following snippet or run the  [script](./alb-operator/deploy-awslbo.sh)
 
 ```bash
 #!/bin/sh
@@ -106,7 +106,7 @@ spec:
 EOF
 ```
 
- **Note:** If you have a cluster-wide proxy, you must run the following snippet or uncomment the "Configuring egress proxy for AWS Load Balancer Operator" section in the [deploy-awlbo.sh](./alb-operator/deploy-awlbo.sh)
+ **Note:** If you have a cluster-wide proxy, you must run the following snippet or uncomment the "Configuring egress proxy for AWS Load Balancer Operator" section in the [deploy-awslbo.sh](./alb-operator/deploy-awlbo.sh)
 
 ```bash
  oc -n aws-load-balancer-operator create configmap trusted-ca
